@@ -128,7 +128,12 @@ namespace System.Globalization
                 // Note that & has the lower precedence than addition, so don't forget the parathesis.
                 index = NumericLevel2Index[(index << 4) + ((ch >> 4) & 0x000f)];
                 index = NumericLevel3Index[(index << 4) + (ch & 0x000f)];
+#if __MonoCS__
+                var temp = NumericValues[index * 8];
+                ref byte value = ref Unsafe.AsRef(ref temp);
+#else
                 ref byte value = ref Unsafe.AsRef(in NumericValues[index * 8]);
+#endif
 
                 if (BitConverter.IsLittleEndian)
                 {
@@ -255,7 +260,12 @@ namespace System.Globalization
             int index = CategoryLevel1Index[ch >> 9];
             // Get the level 2 WORD offset from the next 5 bits of ch.  This provides the base offset of the level 3 table.
             // Note that & has the lower precedence than addition, so don't forget the parathesis.
+#if __MonoCS__
+            var temp = CategoryLevel2Index[(index << 6) + ((ch >> 3) & 0b111110)];
+            index = Unsafe.ReadUnaligned<ushort>(ref Unsafe.AsRef(ref temp));
+#else
             index = Unsafe.ReadUnaligned<ushort>(ref Unsafe.AsRef(in CategoryLevel2Index[(index << 6) + ((ch >> 3) & 0b111110)]));
+#endif
             if (!BitConverter.IsLittleEndian)
             {
                 index = BinaryPrimitives.ReverseEndianness((ushort)index);
